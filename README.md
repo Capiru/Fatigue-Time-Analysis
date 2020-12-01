@@ -1,1 +1,3 @@
 # Fatigue-Time-Analysis
+
+The matlab script loads a csv file, converts the data into a an array and performs a time series analysis, giving the expected fatigue damage the component suffered during this time period. Using this prediction, we extrapolate how long will it take for it to accumulate enough damage for it to no longer be statiscally predictable when the machine will fail. This is the period where usually industry warranty ends, therefore it is of utmost importance for a company to overestimate it's machine's life expectancy, as replacements could eat a good portion, if not all, of profits.
