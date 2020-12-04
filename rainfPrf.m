@@ -1,21 +1,21 @@
 function f=rainfPrf(NCic)
-% NCic=4*100;
-%Diretório onde estão os arquivos
+%if no cicle limit is specified, it is set to 1e7
 if exist('NCic')==0
     NCic=1e7;
 end
+%directory where the files are
 dirPath="D:\\Google Drive\\Faculdade\\TCC\\Parafusos Transiente\\frmtstr\\";
-%Lista com todos diretórios e arquivos no diretório Pai
+%file list with all dirs and files at the origin directory
 list=dir(dirPath);
-%Tamanho dos arquivos : numero de variáveis x número de nós (inf)
+%File size : Number of variables extracted x node number (inf) in order to keep adding data until it is full
 sizeF = [5,inf];
-%Inicializa a Variável Dano
+%initialize variable to calculate damage as zeros
 Dano=zeros(size(list,1),9);
-%Laço para calcular tensão normal depois cisalhante
+%loop to calculate normal stress then shear stress
 for k=1:2
-    %Laço para calcular o dano do histórico de cada parafuso
+    %loop to calculate the damage in the time history data of each screw
     for j=1:size(list,1)
-        %Se não for arquivo pula para o próximo j
+        %if it is not a file, skip
         if list(j).isdir==1
             continue;
         end
@@ -26,21 +26,20 @@ for k=1:2
             continue;
         end
         end
-        %abre o arquivo lê e joga as informações na matriz A e fecha o arq
+        %open the file, read and fill the A matrix with the data then close the fiile
         arquivo=fopen(dirPath+list(j).name,'r');
         A=fscanf(arquivo,'%f',sizeF);
         A=A';
         fclose(arquivo);
         Name=erase(list(j).name,'.txt');
         Dano(j,1)=str2double(Name);
-        %Chama a função sig2ext que extrai os pontos de inflexão do
-        %histórico para usar a função rainflow
+        %call sig2ext to find inflexion points in the time history data
         extB=sig2ext(A(:,2*k));
         extT=sig2ext(A(:,2*k+1));
-        %Chama a função rainflow que retorna uma matriz 3xn, onde :
-        %1: Amplitude
-        %2: Média
-        %3: Número de Ciclos no Histórico
+        %call rainflow, returns a 3xn matrix, where :
+        %1: Stress Amplitude
+        %2: Mean Stress
+        %3: Number of Cycles Counted
         rfB=rainflow(extB);
         rfT=rainflow(extT);
         ampB=rfB(1,:);
@@ -49,10 +48,10 @@ for k=1:2
         meanT=rfT(2,:);
         nB=rfB(3,:);
         nT=rfT(3,:);
-        %Inicializa a Soma de Miner
+        %Start the miner Sum at 0
         minerSumB=0;
         minerSumT=0;
-        %Soma de um a n do número de ciclos dividido pelo limite
+        %sums from 1 to n cycles, divided by the cycle limit
         for i=1:size(nT)
             if meanT(i)+ampT(i)>0
                 minerSumT=minerSumT+nT(i)/FLife(ampT(i)*2,50*k);
@@ -68,9 +67,9 @@ for k=1:2
         Dano(j,2*k)=minerSumB;
         Dano(j,2*k+1)=minerSumT;
     end
-    %Laço para calcular o Dano em funcionamento
+    %loop to calculate the damage under normal operation
     for j=1:size(list,1)
-        %Se não for arquivo pula para o próximo j
+        %if it is not a file, skip
         if list(j).isdir==1
             continue;
         end
@@ -80,21 +79,21 @@ for k=1:2
             continue;
         end
         end
-        %abre o arquivo lê e joga as informações na matriz A e fecha o arq
+        %open the file, read and fill the A matrix with the data then close the fiile
         arquivo=fopen(dirPath+list(j).name,'r');
         A=fscanf(arquivo,'%f',sizeF);
         A=A';
-        %Cria um vetor auxiliar que verifica se o tempo é superior a 1
+        %creates an auxiliary vector to check if time is >= 1
         StartTime=4;
         vet=(A(:,1)>=StartTime);
         A(:,k+1)=vet.*A(:,k+1);
         fclose(arquivo);
         extB=sig2ext(A(:,2*k));
         extT=sig2ext(A(:,2*k+1));
-        %Chama a função rainflow que retorna uma matriz 3xn, onde :
-        %1: Amplitude
-        %2: Média
-        %3: Número de Ciclos no Histórico
+        %call rainflow, returns a 3xn matrix, where :
+        %1: Stress Amplitude
+        %2: Mean Stress
+        %3: Number of Cycles Counted
         rfB=rainflow(extB);
         rfT=rainflow(extT);
         ampB=rfB(1,:);
@@ -103,13 +102,13 @@ for k=1:2
         meanT=rfT(2,:);
         nB=rfB(3,:);
         nT=rfT(3,:);
-        %Inicializa a Soma de Miner
+        %Start the miner Sum at 0
         minerSumB=0;
         minerSumT=0;
         for i=1:size(nT)
-            %Somente leva em conta o dano caso seja trativo
+            %Only take into account if it is under tensile stress
             if meanT(i)+ampT(i)>0
-                %Somente leva em conta o dano caso exceda 30% do limite
+                % Only sums damage if the stress amplitude is over the stress limit
                 if ampT(i)>0.1*50*k
                     minerSumT=minerSumT+nT(i)*(NCic)/4.166667/FLife(ampT(i)*2,50*k);
                 end
@@ -118,7 +117,7 @@ for k=1:2
         end
         for i=1:size(nB)
             if meanB(i)+ampB(i)>0
-                %Somente leva em conta o dano caso exceda 30% do limite
+                % Only sums damage if the stress amplitude is over the stress limit
                 if ampB(i)>0.1*50*k
                     minerSumB=minerSumB+nB(i)*(NCic)/4.166667/FLife(ampB(i)*2,50*k);
                 end
